@@ -4,24 +4,27 @@ const uint8_t
   pinTick = 10,
   pinLED = LED_BUILTIN;
 
+int count = 0;
+
 void setup() {
   //Initialize serial and wait for port to open:
   Serial.begin(9600);
   while (!Serial) {
     ;  // wait for serial port to connect. Needed for native USB port only
   }
-  /*
+  
   // Initialize timer settings
-  cli();                  // Disable interrupts
   TCCR1A = 0;			        // Reset entire TCCR1A register
   TCCR1B = 0;			        // Reset entire TCCR1B register
-  TCCR1A |= B00000100;		// Set CS12 to 1 so we get Prescalar = 1024
-  TIMSK1 |= B00000010;    // Set OCIE1A to 1 so we enable compare match A
+  TCCR1B = _BV(CS12) | _BV(CS10) | _BV(WGM12);  // Set TCCR1B for 1024 prescalar and clear on match
+  TIMSK1 = _BV(OCIE1A);
+  //TCCR1B |= B00000100;		// Set CS12 to 1 so we get Prescalar = 1024
+  //TIMSK1 |= B00000010;    // Set OCIE1A to 1 so we enable compare match A
   OCR1A = 15625;          // Set compare match to 15625 for 1 second interrupts
-  sei();                  // Enable interrupts
-*/
 
-  pinMode(pinTick, OUTPUT);  //connected to OC1B; pulses at 1pps
+  pinMode(pinLED, OUTPUT);  //connected to OC1B; pulses at 1pps
+
+/*
   pinMode(pinLED, OUTPUT);   //toggled in OC1A interrupt at 1-sec intervals
 
   //timer 1 setup
@@ -39,13 +42,30 @@ void setup() {
   //  width == N * 16uS
   //      in this example, should be ~160uS
   OCR1B = 0x0064;
+
+
+  TCCR1A = _BV(COM1B1) | _BV(WGM12);
+  */
 }
 
 void loop() {
-  Serial.println("Hello");
+  //Serial.println("Hello");
+  //delay(100);
 }
 
 ISR(TIMER1_COMPA_vect) {
+  Serial.println("Interrupt");
+
+  if(count == 0)
+  {
+    Serial.println("recording");
+  }
+
+  count++;
+  if(count > 9) {
+    count = 0;
+  }
+
   static bool
     flag = false;
 
