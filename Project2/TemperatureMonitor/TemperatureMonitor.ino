@@ -1,10 +1,5 @@
-int tempPin = 0;
-
-const uint8_t
-  pinTick = 10,
-  pinLED = LED_BUILTIN;
-
-int count = 0;
+const int tempPin = 0;  // Recording temperature on pin A0
+int count = 0;  // Interrupt counter
 
 void setup() {
   //Initialize serial and wait for port to open:
@@ -17,40 +12,13 @@ void setup() {
   TCCR1A = 0;			        // Reset entire TCCR1A register
   TCCR1B = 0;			        // Reset entire TCCR1B register
   TCCR1B = _BV(CS12) | _BV(CS10) | _BV(WGM12);  // Set TCCR1B for 1024 prescalar and clear on match
-  TIMSK1 = _BV(OCIE1A);
-  //TCCR1B |= B00000100;		// Set CS12 to 1 so we get Prescalar = 1024
-  //TIMSK1 |= B00000010;    // Set OCIE1A to 1 so we enable compare match A
+  TIMSK1 = _BV(OCIE1A); // Enable compare match A
   OCR1A = 15625;          // Set compare match to 15625 for 1 second interrupts
 
   pinMode(pinLED, OUTPUT);  //connected to OC1B; pulses at 1pps
-
-/*
-  pinMode(pinLED, OUTPUT);   //toggled in OC1A interrupt at 1-sec intervals
-
-  //timer 1 setup
-  //  WGM15, prescaler /256
-  //  connect OC1B to pinTick
-  //  enable the OC1A interrupt
-  TCCR1A = _BV(COM1B1) | _BV(WGM11) | _BV(WGM10);
-  TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS12);
-  TIMSK1 = _BV(OCIE1A);
-
-  //with a /256 prescaler, timer 1 ticks at 62.5kHz
-  //1-second is thus 62500 ticks or 0xF424
-  OCR1A = 0xF424;
-  //defines width of 1pps on pinTick
-  //  width == N * 16uS
-  //      in this example, should be ~160uS
-  OCR1B = 0x0064;
-
-
-  TCCR1A = _BV(COM1B1) | _BV(WGM12);
-  */
 }
 
 void loop() {
-  //Serial.println("Hello");
-  //delay(100);
 }
 
 ISR(TIMER1_COMPA_vect) {
