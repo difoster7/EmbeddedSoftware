@@ -1,0 +1,4 @@
+GPS device is /dev/ttyACM0
+To view remotely:
+	1. Login ssh -Y david@192.168.34.1
+	2. cgps -s
