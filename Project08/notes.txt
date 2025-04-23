@@ -1,0 +1,4 @@
+To view RPY (human viewable code)
+1. SSH into RPi (david@192.168.34.1)
+2. Run screen /dev/ttyACM1 9600
+3. To quit screen ctrl-A -> ":quit"
