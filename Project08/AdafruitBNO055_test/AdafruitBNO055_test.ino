@@ -29,11 +29,11 @@ void loop(void)
   bno.getEvent(&event);
   
   /* Display the floating point data */
-  Serial.print("X: ");
+  Serial.print("Yaw: ");
   Serial.print(event.orientation.x, 4);
-  Serial.print("\tY: ");
+  Serial.print("\tPitch: ");
   Serial.print(event.orientation.y, 4);
-  Serial.print("\tZ: ");
+  Serial.print("\tRoll: ");
   Serial.print(event.orientation.z, 4);
   Serial.println("");
   
