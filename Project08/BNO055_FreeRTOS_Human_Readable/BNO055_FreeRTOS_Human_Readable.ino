@@ -50,7 +50,7 @@ void setup() {
             "SerialSend",// Task name
             128,// Stack size 
             NULL,
-            1,// Priority
+            2,// Priority
             NULL);
   }
 }
@@ -71,7 +71,7 @@ void TaskRPYRead(void *pvParameters)
     RPYReadArray[2] = event.orientation.x;
 
     xQueueSend(orientationQueue, &RPYReadArray, 0);
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
   }
 }
 
