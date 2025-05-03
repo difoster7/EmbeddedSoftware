@@ -77,12 +77,10 @@ void loop(void)
   Serial.print(event.orientation.z, 4);
   Serial.print("\tPitch: ");
   Serial.print(event.orientation.y, 4);
-  Serial.print("\Yaw: ");
+  Serial.print("\tYaw: ");
   Serial.print(event.orientation.x, 4);
   Serial.println("");
 
   float newData[3] = {event.orientation.z, event.orientation.y, event.orientation.x};
   prepareData(newData);
-  
-  delay(10);
 }
