@@ -1,13 +1,27 @@
 #include <SPI.h>
 
+volatile byte dataToSend = 0x42; // Example byte
+volatile boolean dataSent = false;
+
 void setup() {
-  // put your setup code here, to run once:
-  SPI.begin();
-  SPI.setClockDivider(SPI_CLOCK_DIV16); // Set SPI speed to 1MHz for level limiter
+  Serial.begin(9600);
+  pinMode(MISO, OUTPUT);
+  SPCR |= _BV(SPE);  // Enable SPI
+  SPCR |= _BV(SPIE); // Enable SPI interrupt
+  sei();             // Enable global interrupts
+}
+
+ISR(SPI_STC_vect) {
+  Serial.println("Received SPI Interrupt");
+  byte received = SPDR;  // Read byte from master
+  SPDR = dataToSend;     // Load data to send next
+  dataSent = true;
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  byte outgoing = 0xFA;
-  SPI.transfer(outgoing);
+  if (dataSent) {
+    // Optional: Change the byte to send next time
+    dataToSend++;
+    dataSent = false;
+  }
 }
