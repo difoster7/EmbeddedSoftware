@@ -4,7 +4,12 @@
 #include <unistd.h>
 
 #define SPI_CHANNEL 0
-#define SPI_SPEED 1000000
+#define SPI_SPEED 500000
+
+union floatSPI{
+    float f;
+    unsigned char b[4];
+};
 
 int main(void)
 {
@@ -23,9 +28,24 @@ int main(void)
 
     while(1)
     {
-        unsigned char buffer[1] = { 0x00 };
-        wiringPiSPIDataRW(SPI_CHANNEL, buffer, 1);
-        printf("Received: 0x%02X\n", buffer[0]);
+        unsigned char byte;
+        do {
+            wiringPiSPIDataRW(SPI_CHANNEL, &byte, 1);
+        } while(byte != 0xAA);
+
+        floatSPI foo;
+        wiringPiSPIDataRW(SPI_CHANNEL, &foo.b[0], 1);
+        printf("0x%02X", foo.b[0]);
+        usleep(5000);
+        wiringPiSPIDataRW(SPI_CHANNEL, &foo.b[1], 1);
+        printf(" %02X", foo.b[1]);
+        usleep(5000);
+        wiringPiSPIDataRW(SPI_CHANNEL, &foo.b[2], 1);
+        printf(" %02X", foo.b[2]);
+        usleep(5000);
+        wiringPiSPIDataRW(SPI_CHANNEL, &foo.b[3], 1);
+        printf(" %02X\n", foo.b[3]);
+        printf("Received: %f\n", foo.f);
         sleep(1);
     }
 }
