@@ -42,7 +42,7 @@ int main(void) {
         }
         printf("\n");
 
-        sleep(1);
+        usleep(100000);
     }
 
     return 0;
