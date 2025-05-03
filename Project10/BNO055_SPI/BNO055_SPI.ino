@@ -1,27 +1,21 @@
-#include <Arduino_FreeRTOS.h>
-#include <queue.h>
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
-
+#include <SPI.h>
+  
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
-void TaskRPYRead(void *pvParameters);
-void TaskSerialSend(void *pvParameters);
+byte dataBuffer[2][13];
+volatile byte sendBuffer[13];
+volatile byte byteIndex = 0;
+int validBuffer = 0;
 
-QueueHandle_t orientationQueue; // global queue handler
-
-float RPYReadArray[3] = {0, 0, 0};
-float RPYSendArray[3] = {0, 0, 0};
-
-void setup() {
-
+ 
+void setup(void) 
+{
   Serial.begin(9600);
-    while(!Serial) {
-    ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
-  }
-
+ 
   /* Initialise the sensor */
   if(!bno.begin())
   {
@@ -29,65 +23,66 @@ void setup() {
     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
     while(1);
   }
-
+  
+  delay(1000);
+    
   bno.setExtCrystalUse(true);
 
-  // Create queue
-  orientationQueue = xQueueCreate(10, sizeof(float)*3);
+  pinMode(MISO, OUTPUT);
+  SPCR |= _BV(SPE);  // Enable SPI
+  SPCR |= _BV(SPIE); // Enable SPI interrupt
+  sei();
 
-  if(orientationQueue != NULL)
-  {
-    // Create task to read Roll, Pitch, and Yaw from the BNO055 sensor
-    xTaskCreate(TaskRPYRead,// Task function
-            "RPYRead",// Task name
-            128,// Stack size 
-            NULL,
-            1,// Priority
-            NULL);
-    // Create task to send data over serial port
-
-    xTaskCreate(TaskSerialSend,// Task function
-            "SerialSend",// Task name
-            128,// Stack size 
-            NULL,
-            2,// Priority
-            NULL);
-  }
 }
 
-void loop() {
-  // empty with FreeRTOS
-}
+void prepareData(float inData[]) {
+  union {
+    float f;
+    byte b[4];
+  } dataConvert;
 
-void TaskRPYRead(void *pvParameters)
-{
-  sensors_event_t event; 
-  for(;;)
-  {
-    bno.getEvent(&event);
+  dataBuffer[validBuffer^1][0] = 0xAA; // Start-of-frame marker
 
-    RPYReadArray[0] = event.orientation.z;
-    RPYReadArray[1] = event.orientation.y;
-    RPYReadArray[2] = event.orientation.x;
-
-    xQueueSend(orientationQueue, &RPYReadArray, 0);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-  }
-}
-
-void TaskSerialSend(void *pvParameters)
-{
-  for(;;)
-  {
-    if(xQueueReceive(orientationQueue, &RPYSendArray, portMAX_DELAY) == pdPASS)
-    {
-      Serial.print("Roll: ");
-      Serial.print(RPYSendArray[0], 4);
-      Serial.print("\tPitch: ");
-      Serial.print(RPYSendArray[1], 4);
-      Serial.print("\tYaw: ");
-      Serial.print(RPYSendArray[2], 4);
-      Serial.println("");
+  for (int i = 0; i < 3; i++) {
+    dataConvert.f = inData[i];
+    for (int j = 0; j < 4; j++) {
+      dataBuffer[validBuffer^1][1 + i * 4 + j] = dataConvert.b[j];
     }
   }
+
+  validBuffer = validBuffer^1;
+}
+
+ISR(SPI_STC_vect) {
+  byte dummy = SPDR;
+  if (byteIndex == 0) // Safe to switch data
+  {
+    for (int i = 0; i < 13; i++)
+    {
+      sendBuffer[i] = dataBuffer[validBuffer][i];
+    }
+  }
+  SPDR = sendBuffer[byteIndex];
+  byteIndex = (byteIndex + 1) % 13;
+}
+
+void loop(void) 
+{
+  /* Get a new sensor event */ 
+  sensors_event_t event; 
+  bno.getEvent(&event);
+  
+  /* Display the floating point data */
+  Serial.print("Roll: ");
+  Serial.print(event.orientation.z, 4);
+  Serial.print("\tPitch: ");
+  Serial.print(event.orientation.y, 4);
+  Serial.print("\Yaw: ");
+  Serial.print(event.orientation.x, 4);
+  Serial.println("");
+
+  float newData[3] = {event.orientation.z, event.orientation.y, event.orientation.x};
+  prepareData(newData);
+  
+  delay(10);
 }
